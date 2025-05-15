@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.djnd.post_data.domain.entity.Permission;
 import com.djnd.post_data.domain.entity.Role;
@@ -17,21 +18,29 @@ import com.djnd.post_data.domain.response.ResultPaginationDTO;
 import com.djnd.post_data.domain.response.crud.ResUserCreateDTO;
 import com.djnd.post_data.domain.response.crud.ResUserUpdateDTO;
 import com.djnd.post_data.repository.UserRepository;
+import com.djnd.post_data.utils.SecurityUtils;
 import com.djnd.post_data.utils.UpdateNotNull;
 import com.djnd.post_data.utils.convert.ConvertModuleUser;
+
+import jakarta.persistence.EntityManager;
 
 @Service
 public class UserService {
     private final UserRepository userRepository;
     private final RoleService roleService;
-    private final PermissionService permissionService;
+    private final EntityManager entityManager;
 
     public UserService(UserRepository userRepository,
             RoleService roleService,
-            PermissionService permissionService) {
+            EntityManager entityManager) {
         this.userRepository = userRepository;
         this.roleService = roleService;
-        this.permissionService = permissionService;
+        this.entityManager = entityManager;
+    }
+
+    public String fetchUsernameBySecurity() {
+        String email = SecurityUtils.getCurrentUserLogin().get();
+        return email;
     }
 
     public User handleGetUserByUsername(String email) {
@@ -63,6 +72,15 @@ public class UserService {
         this.userRepository.deleteById(id);
     }
 
+    public ResUserUpdateDTO updateNew(User user) {
+        Optional<User> userOp = this.userRepository.findById(user.getId());
+        if (userOp.isPresent()) {
+            UpdateNotNull.handle(user, userOp);
+            this.userRepository.save(userOp.get());
+        }
+        return null;
+    }
+
     public ResUserCreateDTO createNewUser(RequestCreateDTO user) {
         User userNew = new User();
         userNew.setAddress(user.getAddress());
@@ -79,19 +97,41 @@ public class UserService {
         return ConvertModuleUser.createdTran(currentUser);
     }
 
-    public ResUserUpdateDTO updateUser(RequestCreateDTO user) {
+    public ResUserUpdateDTO updateUser(User user) {
         Optional<User> userOptional = userRepository.findById(user.getId());
         if (userOptional.isPresent()) {
             User dbUser = userOptional.get();
-            Role role = this.roleService.findByName(user.getRole());
-            if (role != null) {
-                dbUser.setRole(role);
+            if (user.getRole() != null) {
+                Role role = this.roleService.findByName(user.getRole().getName());
+                if (role == null) {
+                    user.setRole(null);
+                } else {
+                    dbUser.setRole(role);
+                }
             }
+
             UpdateNotNull.handle(user, dbUser);
-            User resUser = this.userRepository.save(dbUser);
-            return ConvertModuleUser.updatedTran(resUser);
+            return ConvertModuleUser.updatedTran(this.userRepository.save(dbUser));
         }
         return null;
+    }
+
+    public ResUserUpdateDTO updateUser2(User user) {
+        User userDB = this.userRepository.findById(user.getId()).get();
+        if (user.getRole() != null) {
+            Role role = this.roleService.findByName(user.getRole().getName());
+            if (role == null) {
+                user.setRole(null);
+            } else {
+                userDB.setRole(role);
+            }
+        }
+
+        UpdateNotNull.handle(user, userDB);
+        User res = this.userRepository.save(userDB);
+        // cancel transactional, send sql ngay lam tuc
+        // this.entityManager.flush();
+        return ConvertModuleUser.updatedTran(res);
     }
 
     public boolean existsById(Long id) {
