@@ -11,4 +11,6 @@ import com.djnd.post_data.domain.entity.Permission;
 @Repository
 public interface PermissionRepository extends JpaRepository<Permission, Long>, JpaSpecificationExecutor<Permission> {
     List<Permission> findByIdIn(List<Long> ids);
+
+    boolean existsByName(String name);
 }

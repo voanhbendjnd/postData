@@ -4,21 +4,21 @@ import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.aspectj.apache.bcel.classfile.Module.Uses;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.djnd.post_data.domain.entity.Permission;
 import com.djnd.post_data.domain.entity.Role;
 import com.djnd.post_data.domain.request.role.RequestUpdateRoleDTO;
+import com.djnd.post_data.domain.response.ResultPaginationDTO;
 import com.djnd.post_data.domain.response.crud.ResRoleCreateDTO;
 import com.djnd.post_data.domain.response.crud.ResRoleUpdateDTO;
 import com.djnd.post_data.repository.RoleRepository;
 import com.djnd.post_data.utils.SecurityUtils;
 import com.djnd.post_data.utils.UpdateNotNull;
 import com.djnd.post_data.utils.convert.ConvertModuleRole;
-
-import jakarta.persistence.Convert;
 
 @Service
 public class RoleService {
@@ -28,6 +28,10 @@ public class RoleService {
     public RoleService(RoleRepository roleRepository, PermissionService permissionService) {
         this.roleRepository = roleRepository;
         this.permissionService = permissionService;
+    }
+
+    public List<Role> findByIdIn(List<Long> ids) {
+        return this.roleRepository.findByIdIn(ids);
     }
 
     public boolean existsById(Long id) {
@@ -127,6 +131,31 @@ public class RoleService {
         UpdateNotNull.handle(role, roleDB);
         Role res = this.roleRepository.save(roleDB);
         return ConvertModuleRole.updateTran(res);
+    }
+
+    public ResRoleCreateDTO fetchById(Long id) {
+        Role role = this.roleRepository.findById(id).get();
+        return ConvertModuleRole.createTran(role);
+    }
+
+    public void deleteById(Long id) {
+        this.roleRepository.deleteById(id);
+    }
+
+    public ResultPaginationDTO fetchAll(Pageable pageable, Specification<Role> spec) {
+        Page<Role> page = this.roleRepository.findAll(pageable);
+        ResultPaginationDTO res = new ResultPaginationDTO();
+        ResultPaginationDTO.Meta mt = new ResultPaginationDTO.Meta();
+        mt.setPage(pageable.getPageNumber() + 1);
+        mt.setPageSize(pageable.getPageSize());
+        mt.setPages(page.getTotalPages());
+        mt.setTotal(page.getTotalElements());
+        List<ResRoleCreateDTO> listRole = page.getContent().stream()
+                .map(ConvertModuleRole::createTran)
+                .collect(Collectors.toList());
+        res.setMeta(mt);
+        res.setResult(listRole);
+        return res;
     }
 
 }

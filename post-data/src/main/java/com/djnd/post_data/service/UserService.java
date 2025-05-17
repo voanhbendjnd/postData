@@ -8,9 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import com.djnd.post_data.domain.entity.Permission;
 import com.djnd.post_data.domain.entity.Role;
 import com.djnd.post_data.domain.entity.User;
 import com.djnd.post_data.domain.request.user.RequestCreateDTO;
