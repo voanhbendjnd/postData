@@ -2,6 +2,7 @@ package com.djnd.post_data.controller.client;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -16,12 +17,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.djnd.post_data.domain.entity.User;
 import com.djnd.post_data.domain.request.user.RequestLoginDTO;
 import com.djnd.post_data.domain.response.ResLoginDTO;
+import com.djnd.post_data.domain.response.crud.ResUserCreateDTO;
+import com.djnd.post_data.service.EmailService;
 import com.djnd.post_data.service.UserService;
 import com.djnd.post_data.utils.SecurityUtils;
 import com.djnd.post_data.utils.annotation.ApiMessage;
@@ -36,14 +38,17 @@ public class AuthController {
         private final AuthenticationManagerBuilder builder;
         private final UserService userService;
         private final PasswordEncoder passwordEncoder;
+        private final EmailService emailService;
         @Value("${djnd.jwt.access-token-validity-in-seconds}")
         private Long refreshTokenExpiration;
 
         public AuthController(AuthenticationManagerBuilder builder, SecurityUtils securityUtils,
-                        UserService userService, PasswordEncoder passwordEncoder) {
+                        UserService userService, PasswordEncoder passwordEncoder,
+                        EmailService emailService) {
                 this.builder = builder;
                 this.securityUtils = securityUtils;
                 this.userService = userService;
+                this.emailService = emailService;
                 this.passwordEncoder = passwordEncoder;
         }
 
@@ -190,6 +195,26 @@ public class AuthController {
                                 .maxAge(0)
                                 .build();
                 return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString()).body(null);
+        }
+
+        @PostMapping("/auth/register")
+        @ApiMessage("Create account")
+        public ResponseEntity<ResUserCreateDTO> createAccount(@Valid @RequestBody User user) throws IdInvalidException {
+                if (this.userService.existsByEmail(user.getEmail())) {
+                        throw new IdInvalidException(">>> Email already exist, please choice other email! <<<");
+                }
+                user.setPassword(this.passwordEncoder.encode(user.getPassword()));
+                return ResponseEntity.status(HttpStatus.CREATED).body(this.userService.createNewAccount(user));
+        }
+
+        @PostMapping("/auth/forget-password")
+        @ApiMessage("Get OTP")
+        public ResponseEntity<Void> getOPTForForgetPassword(@RequestBody RequestLoginDTO dto)
+                        throws IdInvalidException {
+                if (this.userService.existsByEmail(dto.getUsername())) {
+
+                }
+                throw new IdInvalidException(">>> Email or user name not exist! <<<");
         }
 
 }

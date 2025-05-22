@@ -24,7 +24,6 @@ import com.djnd.post_data.utils.error.IdInvalidException;
 import com.turkraft.springfilter.boot.Filter;
 
 import jakarta.validation.Valid;
-import jakarta.validation.executable.ValidateOnExecution;
 
 @RestController
 @RequestMapping("/api/v1")

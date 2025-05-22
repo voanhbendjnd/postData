@@ -95,6 +95,13 @@ public class UserService {
         return ConvertModuleUser.createdTran(currentUser);
     }
 
+    public ResUserCreateDTO createNewAccount(User user) {
+        Role role = this.roleService.findByName("SUPER_USER");
+        user.setRole(role);
+        User res = this.userRepository.save(user);
+        return ConvertModuleUser.createdTran(res);
+    }
+
     public ResUserUpdateDTO updateUser(User user) {
         Optional<User> userOptional = userRepository.findById(user.getId());
         if (userOptional.isPresent()) {
