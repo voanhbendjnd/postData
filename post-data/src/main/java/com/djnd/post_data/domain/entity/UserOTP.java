@@ -23,7 +23,6 @@ public class UserOTP {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Size(min = 4, message = ">>> OTP code must be contain 4 number digits! <<<")
     private Integer code;
     @OneToOne
     @JoinColumn(name = "user_id")

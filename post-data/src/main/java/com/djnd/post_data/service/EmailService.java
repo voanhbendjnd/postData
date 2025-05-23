@@ -15,10 +15,12 @@ import com.djnd.post_data.utils.SecurityUtils;
 public class EmailService {
     private final MailSender mailSender;
     private final UserService userService;
+    private final UserOTPService userOTPService;
 
-    public EmailService(MailSender mailSender, UserService userService) {
+    public EmailService(MailSender mailSender, UserService userService, UserOTPService userOTPService) {
         this.userService = userService;
         this.mailSender = mailSender;
+        this.userOTPService = userOTPService;
     }
 
     @Async
@@ -31,16 +33,11 @@ public class EmailService {
     }
 
     @Async
-    public void sendOTPCode() {
+    public void sendOTPCode(int otp, String email) {
         SimpleMailMessage msg = new SimpleMailMessage();
-        String email = SecurityUtils.getCurrentUserLogin().get();
-        User user = this.userService.handleGetUserByUsername(email);
-        Random rd = new Random();
-        if (this.userService.existsByEmail(email) && user.getUserOTP() == null) {
-            int currentdb = rd.nextInt(100000, 999999);
-            UserOTP userOTP = new UserOTP();
-            userOTP.setCode(currentdb);
-
-        }
+        msg.setTo(email);
+        msg.setSubject("OTP khôi phục tài khoản");
+        msg.setText(otp + "");
+        this.mailSender.send(msg);
     }
 }

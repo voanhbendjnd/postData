@@ -20,10 +20,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.djnd.post_data.domain.entity.User;
+import com.djnd.post_data.domain.entity.UserOTP;
 import com.djnd.post_data.domain.request.user.RequestLoginDTO;
 import com.djnd.post_data.domain.response.ResLoginDTO;
 import com.djnd.post_data.domain.response.crud.ResUserCreateDTO;
 import com.djnd.post_data.service.EmailService;
+import com.djnd.post_data.service.UserOTPService;
 import com.djnd.post_data.service.UserService;
 import com.djnd.post_data.utils.SecurityUtils;
 import com.djnd.post_data.utils.annotation.ApiMessage;
@@ -39,17 +41,19 @@ public class AuthController {
         private final UserService userService;
         private final PasswordEncoder passwordEncoder;
         private final EmailService emailService;
+        private final UserOTPService userOTPService;
         @Value("${djnd.jwt.access-token-validity-in-seconds}")
         private Long refreshTokenExpiration;
 
         public AuthController(AuthenticationManagerBuilder builder, SecurityUtils securityUtils,
                         UserService userService, PasswordEncoder passwordEncoder,
-                        EmailService emailService) {
+                        EmailService emailService, UserOTPService userOTPService) {
                 this.builder = builder;
                 this.securityUtils = securityUtils;
                 this.userService = userService;
                 this.emailService = emailService;
                 this.passwordEncoder = passwordEncoder;
+                this.userOTPService = userOTPService;
         }
 
         // access 15
@@ -212,7 +216,9 @@ public class AuthController {
         public ResponseEntity<Void> getOPTForForgetPassword(@RequestBody RequestLoginDTO dto)
                         throws IdInvalidException {
                 if (this.userService.existsByEmail(dto.getUsername())) {
-
+                        this.emailService.sendOTPCode(this.userOTPService.sendOTPCode(dto.getUsername()),
+                                        dto.getUsername());
+                        return ResponseEntity.ok(null);
                 }
                 throw new IdInvalidException(">>> Email or user name not exist! <<<");
         }
