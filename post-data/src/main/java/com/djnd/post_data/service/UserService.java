@@ -36,6 +36,10 @@ public class UserService {
         this.entityManager = entityManager;
     }
 
+    public void saveUser(User user) {
+        this.userRepository.save(user);
+    }
+
     public String fetchUsernameBySecurity() {
         String email = SecurityUtils.getCurrentUserLogin().get();
         return email;

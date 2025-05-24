@@ -1,5 +1,7 @@
 package com.djnd.post_data.domain.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -27,5 +29,6 @@ public class UserOTP {
     @OneToOne
     @JoinColumn(name = "user_id")
     private User user;
+    private LocalDateTime createtionTime;
 
 }

@@ -20,8 +20,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.djnd.post_data.domain.entity.User;
-import com.djnd.post_data.domain.entity.UserOTP;
 import com.djnd.post_data.domain.request.user.RequestLoginDTO;
+import com.djnd.post_data.domain.request.user.RequestOTPUser;
 import com.djnd.post_data.domain.response.ResLoginDTO;
 import com.djnd.post_data.domain.response.crud.ResUserCreateDTO;
 import com.djnd.post_data.service.EmailService;
@@ -113,7 +113,7 @@ public class AuthController {
                 return ResponseEntity.ok(userAccount);
         }
 
-        @GetMapping("/auth/refresh")
+        @GetMapping("/client/auth/refresh")
         @ApiMessage("Create new refresh token")
         public ResponseEntity<ResLoginDTO> createReFreshToken(
                         @CookieValue(name = "refresh_token", defaultValue = "not") String refreshToken)
@@ -221,6 +221,27 @@ public class AuthController {
                         return ResponseEntity.ok(null);
                 }
                 throw new IdInvalidException(">>> Email or user name not exist! <<<");
+        }
+
+        @PostMapping("/auth/check-otp-code")
+        @ApiMessage("Input OTP")
+        public ResponseEntity<String> inputOTP(@RequestBody RequestOTPUser request) {
+                return ResponseEntity.ok(
+                                this.userOTPService.changePasswordForUser(request.getEmail(), request.getOtpCode()));
+        }
+
+        @PostMapping("/client/auth/change-password")
+        @ApiMessage("Change password")
+        public ResponseEntity<String> changePassword(@RequestBody RequestLoginDTO request) {
+                String email = SecurityUtils.getCurrentUserLogin().get();
+                User user = this.userService.handleGetUserByUsername(email);
+                if (user != null) {
+                        String hashPassword = this.passwordEncoder.encode(request.getPassword());
+                        user.setPassword(hashPassword);
+                        this.userService.saveUser(user);
+                        return ResponseEntity.ok("Change password successfully!");
+                }
+                return ResponseEntity.ok("Error");
         }
 
 }

@@ -24,7 +24,8 @@ public class PermissionInterceptorConfiguration implements WebMvcConfigurer {
                 "/files",
                 "/carts/**",
                 "/client/**",
-                "/auth/change-password"
+                "/api/v1/client/auth/change-password",
+                "/api/v1/client/auth/refresh"
 
         };
         registry.addInterceptor(getPermissionInterceptor())
