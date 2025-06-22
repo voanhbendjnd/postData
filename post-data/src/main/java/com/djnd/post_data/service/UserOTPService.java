@@ -75,6 +75,9 @@ public class UserOTPService {
     @Transactional
     public String changePasswordForUser(String email, int code) {
         User user = this.userService.handleGetUserByUsername(email);
+        if (user.getUserOTP() == null) {
+            return ">>> You have not sent request OTP for change password! <<<";
+        }
         if (user.getUserOTP().getCode() == code && user.getRefreshToken() != null) {
             // delete OTP object
             this.userOTPRepository.delete(user.getUserOTP());
@@ -98,8 +101,9 @@ public class UserOTPService {
             res.setAccessToken(newAccessToken);
             String newRefreshToken = this.securityUtils.createRefreshToken(emailJwt, res);
             this.userService.updateUserToken(newRefreshToken, emailJwt);
-            return newAccessToken;
+
+            return "AccessToken: " + newAccessToken;
         }
-        return ">>> OTP not found! <<<";
+        return ">>> OTP wrong! <<<";
     }
 }

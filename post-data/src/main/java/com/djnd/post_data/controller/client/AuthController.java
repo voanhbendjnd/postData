@@ -9,6 +9,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.djnd.post_data.domain.entity.User;
+import com.djnd.post_data.domain.request.user.RequestCreateAccount;
 import com.djnd.post_data.domain.request.user.RequestLoginDTO;
 import com.djnd.post_data.domain.request.user.RequestOTPUser;
 import com.djnd.post_data.domain.response.ResLoginDTO;
@@ -232,16 +234,22 @@ public class AuthController {
 
         @PostMapping("/client/auth/change-password")
         @ApiMessage("Change password")
-        public ResponseEntity<String> changePassword(@RequestBody RequestLoginDTO request) {
+        public ResponseEntity<String> changePassword(@Valid @RequestBody RequestCreateAccount request)
+                        throws IdInvalidException {
+
                 String email = SecurityUtils.getCurrentUserLogin().get();
                 User user = this.userService.handleGetUserByUsername(email);
                 if (user != null) {
-                        String hashPassword = this.passwordEncoder.encode(request.getPassword());
-                        user.setPassword(hashPassword);
-                        this.userService.saveUser(user);
-                        return ResponseEntity.ok("Change password successfully!");
+                        if (request.getPassword().equals(request.getConfirmPassword())) {
+                                String hashPassword = this.passwordEncoder.encode(request.getPassword());
+                                user.setPassword(hashPassword);
+                                this.userService.saveUser(user);
+                                return ResponseEntity.ok("Change password successfully!");
+                        }
+                        throw new IdInvalidException(">>> Password and confirm password are not the same! <<<");
+
                 }
-                return ResponseEntity.ok("Error");
+                throw new IdInvalidException(">>> Erorr during password change! <<<");
         }
 
 }
